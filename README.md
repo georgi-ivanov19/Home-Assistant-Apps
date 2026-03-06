@@ -2,7 +2,7 @@
 
 A Home Assistant add-on that continuously captures an RTSP camera stream, splits it into fixed-duration MP4 segments, and uploads them to an Amazon S3 bucket using short-lived credentials obtained via AWS IoT Core credential provider.
 
-> **Tested with:** Tapo C230. Other cameras exposing a standard RTSP stream should work but have not been verified.
+>[!NOTE] **Tested with:** Tapo C230. Other cameras exposing a standard RTSP stream should work but have not been verified.
 
 ## Planned improvements
 
