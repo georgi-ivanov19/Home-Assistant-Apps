@@ -35,3 +35,6 @@ configuration:
   restart_delay:
     name: Restart Delay (seconds)
     description: How long to wait before restarting the stream after an unexpected disconnect
+  max_segment_storage_mb:
+    name: Max Segment Storage (MB)
+    description: Maximum disk space for buffered segments - oldest unuploaded files are purged when exceeded

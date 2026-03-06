@@ -8,14 +8,14 @@ A Home Assistant add-on that continuously captures an RTSP camera stream, splits
 ## Planned improvements
 
 - **Multiple camera support** - currently the add-on supports a single camera per instance. A future version will accept a list of cameras in the configuration, each with its own RTSP URL and S3 prefix, with shared AWS credentials.
-- **Smarter upload trigger** - currently segments are only uploaded once they are 1 minute old, which adds unnecessary delay. A better approach is to check whether ffmpeg still has the file open (via `fuser`) and upload immediately once it moves on to the next segment.
 
 ## How it works
 
 1. `ffmpeg` connects to the camera over RTSP (TCP transport) and writes rolling MP4 segments to a local temp directory.
-2. A background loop watches for completed segments (files older than 1 minute) and uploads each one to S3 under a `prefix/YYYY/MM/DD/HH/` key structure.
-3. AWS credentials are obtained from the IoT Core credential provider endpoint using mutual TLS (device certificate + private key). They are refreshed automatically every ~50 minutes before expiry.
-4. If `ffmpeg` exits for any reason it is restarted automatically after a configurable delay.
+2. A background loop checks each segment with `fuser` to see whether `ffmpeg` still has it open. As soon as the file is released (i.e. `ffmpeg` has moved on to the next segment), it is uploaded to S3 under a `prefix/YYYY/MM/DD/HH/` key structure and deleted locally.
+3. If buffered segments exceed the configured storage limit (`max_segment_storage_mb`), the oldest unuploaded files are purged to prevent the disk from filling up.
+4. AWS credentials are obtained from the IoT Core credential provider endpoint using mutual TLS (device certificate + private key). They are refreshed automatically every ~50 minutes before expiry.
+5. If `ffmpeg` exits for any reason it is restarted automatically after a configurable delay.
 
 ## Prerequisites
 
@@ -201,12 +201,13 @@ scp certificate.pem private.key root-ca.pem <user>@<ha-host>:/ssl/camera/
 | `s3_bucket`               | string | -             | Name of the S3 bucket to upload segments to                                                        |
 | `s3_prefix`               | string | `camera`      | Key prefix (folder) inside the bucket                                                              |
 | `s3_region`               | string | `eu-west-2`   | AWS region of the S3 bucket                                                                        |
-| `segment_duration`        | int    | `60`          | Length of each recorded segment in seconds                                                         |
+| `segment_duration`        | int    | `300`         | Length of each recorded segment in seconds                                                         |
 | `cert_dir`                | string | `/ssl/camera` | Directory containing `certificate.pem`, `private.key`, and `root-ca.pem`                           |
 | `iot_credential_endpoint` | string | -             | IoT Core credential provider hostname, e.g. `xxxxxxxxxxxx.credentials.iot.eu-west-2.amazonaws.com` |
 | `iot_role_alias`          | string | -             | Name of the IoT Role Alias configured in AWS                                                       |
 | `iot_thing_name`          | string | -             | Name of the IoT Thing registered in AWS                                                            |
 | `restart_delay`           | int    | `10`          | Seconds to wait before restarting `ffmpeg` after an unexpected exit                                |
+| `max_segment_storage_mb`  | int    | `2048`        | Maximum MB of disk for buffered segments - oldest unuploaded files are purged when exceeded         |
 
 ## S3 key structure
 

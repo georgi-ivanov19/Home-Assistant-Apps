@@ -16,12 +16,13 @@ options:
   s3_bucket: ""
   s3_prefix: "camera"
   s3_region: "eu-west-2"
-  segment_duration: 60
+  segment_duration: 300
   cert_dir: "/ssl/camera"
   iot_credential_endpoint: ""
   iot_role_alias: ""
   iot_thing_name: ""
   restart_delay: 10
+  max_segment_storage_mb: 2048
 schema:
   rtsp_url: str
   rtsp_username: str
@@ -35,3 +36,4 @@ schema:
   iot_role_alias: str
   iot_thing_name: str
   restart_delay: int
+  max_segment_storage_mb: int

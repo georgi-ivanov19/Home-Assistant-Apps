@@ -14,6 +14,7 @@ CRED_ENDPOINT=$(bashio::config 'iot_credential_endpoint')
 ROLE_ALIAS=$(bashio::config 'iot_role_alias')
 THING_NAME=$(bashio::config 'iot_thing_name')
 RESTART_DELAY=$(bashio::config 'restart_delay')
+MAX_STORAGE_MB=$(bashio::config 'max_segment_storage_mb')
 
 SEGMENT_DIR="/tmp/rtsp-segments"
 
@@ -57,21 +58,41 @@ start_ffmpeg() {
   echo "Started ffmpeg with PID $FFMPEG_PID"
 }
 
+segment_dir_size_mb() {
+  du -sm "$SEGMENT_DIR" 2>/dev/null | awk '{print $1}'
+}
+
+purge_oldest_segments() {
+  local usage
+  usage=$(segment_dir_size_mb)
+  if (( usage > MAX_STORAGE_MB )); then
+    echo "WARNING: Segment storage ${usage} MB exceeds limit ${MAX_STORAGE_MB} MB, purging oldest files"
+    for f in $(ls -t "$SEGMENT_DIR"/*.mp4 2>/dev/null | tail -n +2 | tac); do
+      fuser -s "$f" 2>/dev/null && continue
+      echo "Purging unuploaded segment: $(basename "$f")"
+      rm -f "$f"
+      usage=$(segment_dir_size_mb)
+      if (( usage <= MAX_STORAGE_MB )); then
+        break
+      fi
+    done
+  fi
+}
+
 upload_segments() {
   for f in "$SEGMENT_DIR"/*.mp4; do
     [ -f "$f" ] || continue
-    if [ "$(find "$f" -mmin +1 2>/dev/null)" ]; then
-      FNAME=$(basename "$f" .mp4)
-      YEAR=${FNAME:0:4}
-      MONTH=${FNAME:4:2}
-      DAY=${FNAME:6:2}
-      HOUR=${FNAME:9:2}
-      S3_KEY="$S3_PREFIX/$YEAR/$MONTH/$DAY/$HOUR/$FNAME.mp4"
-      aws s3 cp "$f" "s3://$S3_BUCKET/$S3_KEY" \
-        --region "$S3_REGION" \
-        && rm "$f" \
-        && echo "Uploaded $S3_KEY"
-    fi
+    fuser -s "$f" 2>/dev/null && continue
+    FNAME=$(basename "$f" .mp4)
+    YEAR=${FNAME:0:4}
+    MONTH=${FNAME:4:2}
+    DAY=${FNAME:6:2}
+    HOUR=${FNAME:9:2}
+    S3_KEY="$S3_PREFIX/$YEAR/$MONTH/$DAY/$HOUR/$FNAME.mp4"
+    aws s3 cp "$f" "s3://$S3_BUCKET/$S3_KEY" \
+      --region "$S3_REGION" \
+      && rm "$f" \
+      && echo "Uploaded $S3_KEY"
   done
 }
 
@@ -92,6 +113,7 @@ while true; do
     LAST_REFRESH=$NOW
   fi
 
+  purge_oldest_segments
   upload_segments
   sleep 10
 done
