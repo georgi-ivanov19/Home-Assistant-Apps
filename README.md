@@ -8,6 +8,8 @@ A Home Assistant add-on that continuously captures an RTSP camera stream, splits
 ## Planned improvements
 
 - **Multiple camera support** - currently the add-on supports a single camera per instance. A future version will accept a list of cameras in the configuration, each with its own RTSP URL and S3 prefix, with shared AWS credentials.
+- **CloudFormation template** - the AWS setup (S3 bucket, IoT Thing, Role Alias, IAM role and policy) requires several manual steps. A CloudFormation template will be provided to provision all required resources in one go.
+- **Smarter upload trigger** - currently segments are only uploaded once they are 1 minute old, which adds unnecessary delay. A better approach is to check whether ffmpeg still has the file open (via `fuser`) and upload immediately once it moves on to the next segment.
 
 ## How it works
 

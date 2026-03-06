@@ -1,7 +1,10 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bashio
 set -e
 
-RTSP_URL=$(bashio::config 'rtsp_url')
+RTSP_BASE=$(bashio::config 'rtsp_url')
+RTSP_USERNAME=$(bashio::config 'rtsp_username')
+RTSP_PASSWORD=$(bashio::config 'rtsp_password')
+RTSP_URL="${RTSP_BASE/rtsp:\/\//rtsp://$RTSP_USERNAME:$RTSP_PASSWORD@}"
 S3_BUCKET=$(bashio::config 's3_bucket')
 S3_PREFIX=$(bashio::config 's3_prefix')
 S3_REGION=$(bashio::config 's3_region')

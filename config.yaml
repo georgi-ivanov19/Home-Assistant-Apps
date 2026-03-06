@@ -10,7 +10,9 @@ boot: auto
 map:
   - ssl:ro
 options:
-  rtsp_url: "rtsp://username:password@192.168.1.x:554/stream2"
+  rtsp_url: "rtsp://192.168.1.x:554/stream1"
+  rtsp_username: ""
+  rtsp_password: ""
   s3_bucket: ""
   s3_prefix: "camera"
   s3_region: "eu-west-2"
@@ -22,6 +24,8 @@ options:
   restart_delay: 10
 schema:
   rtsp_url: str
+  rtsp_username: str
+  rtsp_password: password
   s3_bucket: str
   s3_prefix: str
   s3_region: str

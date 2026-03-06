@@ -1,0 +1,37 @@
+configuration:
+  rtsp_url:
+    name: Camera URL
+    description: "RTSP URL without credentials, e.g. rtsp://192.168.1.x:554/stream1"
+  rtsp_username:
+    name: Camera Username
+    description: Username for the camera's RTSP stream
+  rtsp_password:
+    name: Camera Password
+    description: Password for the camera's RTSP stream
+  s3_bucket:
+    name: S3 Bucket Name
+    description: Name of the S3 bucket to upload recordings to
+  s3_prefix:
+    name: S3 Key Prefix
+    description: "Folder prefix inside the bucket, e.g. front-door"
+  s3_region:
+    name: AWS Region
+    description: AWS region where the S3 bucket is located
+  segment_duration:
+    name: Segment Duration (seconds)
+    description: Length of each recorded video segment
+  cert_dir:
+    name: Certificate Directory
+    description: Path to the directory containing certificate.pem, private.key, and root-ca.pem
+  iot_credential_endpoint:
+    name: IoT Credential Endpoint
+    description: "Your AWS IoT credential provider hostname, found in IoT Core → Settings"
+  iot_role_alias:
+    name: IoT Role Alias
+    description: Name of the IoT Role Alias configured in AWS
+  iot_thing_name:
+    name: IoT Thing Name
+    description: Name of the IoT Thing registered in AWS
+  restart_delay:
+    name: Restart Delay (seconds)
+    description: How long to wait before restarting the stream after an unexpected disconnect
