@@ -57,20 +57,20 @@ aws cloudformation deploy \
   --template-file cloudformation.yaml \
   --stack-name rtsp-to-s3 \
   --parameter-overrides \
-    BucketName=my-camera-recordings \
-    ThingName=my-device \
-    EnableLifecycleExpiration=true \
-    LifecycleExpirationDays=30 \
-    S3Prefix=camera \
+    BucketName=<bucket-name> \
+    ThingName=<thing-name> \
+    EnableLifecycleExpiration=<true|false> \
+    LifecycleExpirationDays=<days> \
+    S3Prefix=<prefix> \
   --capabilities CAPABILITY_NAMED_IAM \
-  --region eu-west-2
+  --region <region>
 ```
 
 | Parameter | Required | Default | Description |
 | --------- | -------- | ------- | ----------- |
-| `BucketName` | yes | — | Name of the S3 bucket to create |
-| `ThingName` | yes | — | Name for the IoT Thing |
-| `EnableLifecycleExpiration` | yes | — | `true` or `false` — enable automatic object expiration |
+| `BucketName` | yes | - | Name of the S3 bucket to create |
+| `ThingName` | yes | - | Name for the IoT Thing |
+| `EnableLifecycleExpiration` | yes | - | `true` or `false` - enable automatic object expiration |
 | `LifecycleExpirationDays` | no | `30` | Days before objects expire (ignored when expiration is disabled) |
 | `S3Prefix` | no | `camera` | Key prefix for the lifecycle rule filter (should match the add-on `s3_prefix` option) |
 
@@ -83,7 +83,7 @@ The stack creates:
 - **IoT Policy** allowing `iot:AssumeRoleWithCertificate` on the role alias
 
 > [!NOTE]
-> The S3 bucket has a `Retain` deletion policy — deleting the stack will **not** delete the bucket or its contents.
+> The S3 bucket has a `Retain` deletion policy - deleting the stack will **not** delete the bucket or its contents.
 
 ### 2. View stack outputs
 
@@ -98,15 +98,19 @@ aws cloudformation describe-stacks \
 
 ### 3. Create the device certificate
 
+You can create the certificate using the **AWS CLI** or the **AWS Console**.
+
+#### Option A - AWS CLI
+
 ```bash
 aws iot create-keys-and-certificate \
   --set-as-active \
   --certificate-pem-outfile certificate.pem \
   --private-key-outfile private.key \
-  --region eu-west-2
+  --region <region>
 ```
 
-Note the `certificateArn` from the output — you need it in the next step.
+This writes `certificate.pem` and `private.key` to the current directory and prints a JSON response. Note the `certificateArn` from the output - you need it in the next step.
 
 Download the Amazon Root CA:
 
@@ -114,7 +118,23 @@ Download the Amazon Root CA:
 curl -o root-ca.pem https://www.amazontrust.com/repository/AmazonRootCA1.pem
 ```
 
+#### Option B - AWS Console
+
+1. Open the **AWS IoT Console** → **Security** → **Certificates** → **Add certificate** → **Create certificate**.
+2. Choose **Auto-generate new certificate** and click **Create**.
+3. On the confirmation page, download all three files:
+   - **Device certificate** (`*-certificate.pem.crt`) - save as `certificate.pem`
+   - **Private key** (`*-private.pem.key`) - save as `private.key`
+   - **Amazon Root CA 1** - save as `root-ca.pem`
+
+> [!WARNING]
+> The private key can only be downloaded at the time of creation. If you miss it you will need to create a new certificate.
+
+4. The certificate is created in an **Inactive** state. Select it from the list and click **Actions** → **Activate**.
+
 ### 4. Attach the certificate to the thing and policy
+
+#### AWS CLI
 
 Replace `<certificate-arn>` with the ARN from step 3, and `<thing-name>` / `<policy-name>` with the values from the stack outputs:
 
@@ -122,27 +142,49 @@ Replace `<certificate-arn>` with the ARN from step 3, and `<thing-name>` / `<pol
 aws iot attach-thing-principal \
   --thing-name <thing-name> \
   --principal <certificate-arn> \
-  --region eu-west-2
+  --region <region>
 
 aws iot attach-policy \
   --policy-name <policy-name> \
   --target <certificate-arn> \
-  --region eu-west-2
+  --region <region>
 ```
+
+#### AWS Console
+
+1. Open the **AWS IoT Console** → **Security** → **Certificates**.
+2. Select the certificate you created in step 3.
+3. Click **Actions** → **Attach policy**, select `<policy-name>` from the stack outputs, and confirm.
+4. Click **Actions** → **Attach thing**, select `<thing-name>` from the stack outputs, and confirm.
 
 ### 5. Get the IoT credential endpoint
 
 ```bash
 aws iot describe-endpoint \
   --endpoint-type iot:CredentialProvider \
-  --region eu-west-2
+  --region <region>
 ```
 
 Use the `endpointAddress` value for the add-on's `iot_credential_endpoint` option.
 
+Alternatively, in the **AWS IoT Console**, go to **Settings** - the **Credential provider endpoint** is listed under **Device data endpoint**.
+
 ### 6. Copy certificates to the Home Assistant host
 
-Copy `certificate.pem`, `private.key`, and `root-ca.pem` to `/ssl/camera/` on your Home Assistant host (or whichever path you configure as `cert_dir` in the add-on).
+Copy the three certificate files to `/ssl/camera/` (or whichever path you configure as `cert_dir`) on your Home Assistant host:
+
+```
+/ssl/camera/
+├── certificate.pem
+├── private.key
+└── root-ca.pem
+```
+
+For example, using `scp`:
+
+```bash
+scp certificate.pem private.key root-ca.pem <user>@<ha-host>:/ssl/camera/
+```
 
 ## Installation
 
