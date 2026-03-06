@@ -1,4 +1,13 @@
-## [0.1.1](https://github.com/georgi-ivanov19/Home-Assistant-Apps/compare/rtsp_to_s3/v0.1.0...rtsp_to_s3/v0.1.1) (2026-03-06)
+## [1.0.1](https://github.com/georgi-ivanov19/Home-Assistant-Apps/compare/rtsp_to_s3/v1.0.0...rtsp_to_s3/v1.0.1) (2026-03-06)
+
+
+### Bug Fixes
+
+* actually reset to 1.0.0 ([721e0ee](https://github.com/georgi-ivanov19/Home-Assistant-Apps/commit/721e0eeb810deac6a5244f06aece1b545272febf))
+
+
+
+# [1.0.0](https://github.com/georgi-ivanov19/Home-Assistant-Apps/compare/rtsp_to_s3/v0.1.1...rtsp_to_s3/v1.0.0) (2026-03-06)
 
 
 ### Bug Fixes
